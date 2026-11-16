@@ -77,6 +77,11 @@ QUESTIONS = [
         ("online", "가능하면 앱으로 (지점 방문 없이)", "By app if possible (no branch visit)"),
         ("unsure", "잘 모르겠어요", "Not sure"),
     ], no_account),
+    ("bank_pick", "은행을 고를 때 가장 중요한 것은 무엇인가요?", "What matters most when you pick a bank?", [
+        ("near", "학교나 집에서 가까운 지점", "A branch close to campus or home"),
+        ("lang", "외국어 지원 (창구, 앱)", "Foreign-language support (counter, app)"),
+        ("app", "쓰기 편한 앱", "An easy-to-use app"),
+    ], no_account),
     ("card", "한국에서 발급받은 체크카드가 있나요?", "Do you have a Korean debit (check) card?", [
         ("yes", "네", "Yes"),
         ("no", "아니요", "No"),
@@ -231,13 +236,14 @@ st.caption(L("외국인 유학생을 위한 금융 준비 진단", "A banking re
 
 a = st.session_state.answers
 visible = [q for q in QUESTIONS if q[4](a)]   # 지금까지의 답변으로 보여 줄 질문만 고른다
-total = len(visible)
+# 계좌가 있든 없든 추가 질문이 2개씩 붙으므로 전체 질문 수는 항상 같다
+total = sum(1 for q in QUESTIONS if q[4] is always) + 2
 step = st.session_state.step
 
 # ---------------------------------------------------------------
 # 6. 질문 화면
 # ---------------------------------------------------------------
-if step < total:
+if step < len(visible):
     qid, q_ko, q_en, options, _ = visible[step]
     st.progress(step / total, text=L(f"질문 {step + 1} / {total}", f"Question {step + 1} of {total}"))
 
@@ -349,6 +355,24 @@ else:
             "평일 오후 4시 전에 가야 하고, 학기 초에는 대기가 깁니다.",
             "Choose a branch on or near campus. They handle many student accounts, so it goes faster. "
             "Go before 4 p.m. on a weekday, and expect long waits at the start of a semester."))
+    if not has_acc and a.get("bank_pick") == "near":
+        tips.append(L(
+            "가까운 지점을 원한다면 학교 안이나 정문 근처에 지점이나 ATM이 있는 은행을 먼저 살펴보세요. "
+            "등록금 납부나 장학금 수령 은행이 정해져 있는지도 국제처에 물어보세요.",
+            "If you want a nearby branch, first look at banks with a branch or ATM on or next to campus. "
+            "Also ask your international office whether tuition or scholarships go through a specific bank."))
+    if not has_acc and a.get("bank_pick") == "lang":
+        tips.append(L(
+            "외국어 지원이 중요하다면 외국인 전용 창구가 있는 지점인지, 앱이 내 언어를 지원하는지 "
+            "방문 전에 확인하세요. 같은 은행이어도 지점마다 다릅니다.",
+            "If language support matters, check before visiting whether the branch has a foreigner desk and "
+            "whether the app supports your language. It differs by branch even within one bank."))
+    if not has_acc and a.get("bank_pick") == "app":
+        tips.append(L(
+            "앱 편의성이 중요하다면 외국인등록증으로 가입과 본인 인증이 되는지를 먼저 확인하세요. "
+            "외국인은 일부 기능이 제한되는 앱도 있습니다.",
+            "If app convenience matters, first check that sign-up and identity verification work with a "
+            "Residence Card. Some apps restrict certain features for foreigners."))
     if a["transit"] == "prepaid" and has_acc:
         tips.append(L(
             "충전식 교통카드를 쓰고 있다면, 체크카드의 교통카드 기능으로 바꾸면 충전할 필요가 없어집니다.",
